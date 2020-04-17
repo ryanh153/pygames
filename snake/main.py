@@ -1,7 +1,7 @@
 import pygame
 import random
-# import tkinter as tk
-# from tkinter import messagebox
+import tkinter as tk
+from tkinter import messagebox
 
 
 class Cube(object):
@@ -149,15 +149,15 @@ def random_snack(item):
     return x, y
 
 
-# def message_box(subject, content):
-#     root = tk.Tk()
-#     root.attributes("-topmost", True)
-#     root.withdraw()
-#     messagebox.showinfo(subject, content)
-#     try:
-#         root.destroy()
-#     except:
-#         pass
+def message_box(subject, content):
+    root = tk.Tk()
+    root.attributes("-topmost", True)
+    root.withdraw()
+    messagebox.showinfo(subject, content)
+    try:
+        root.destroy()
+    except:
+        pass
 
 
 if __name__ == "__main__":
@@ -172,8 +172,7 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
 
     while flag:
-        # pygame.time.delay(30)  # lower -> faster snake
-        clock.tick(15)  # lower -> slower snake
+        clock.tick(15)  # max frames/s
         s.move()
         if s.body[0].pos == snack.pos:
             s.add_cube()
@@ -181,7 +180,7 @@ if __name__ == "__main__":
         for i, seg in enumerate(s.body):
             if seg.pos in [seg2.pos for seg2 in s.body[i+1:]]:
                 print(f"Score: {len(s.body)}")
-                # message_box("You Lost!", "Play again...")
+                message_box("You Lost!", "Play again...")
                 s.reset((10, 10))
                 break
 
