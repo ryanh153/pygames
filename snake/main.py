@@ -1,9 +1,9 @@
 import pygame
 import random
-import tkinter as tk
-from tkinter import messagebox
+# import tkinter as tk
+# from tkinter import messagebox
 
-# TODO: Make the cubes handle checking for moves. Rely on them.
+
 class Cube(object):
     global rows, width
 
@@ -15,7 +15,17 @@ class Cube(object):
 
     def move(self, dirnx, dirny):
         self.dirnx, self.dirny = dirnx, dirny
-        self.pos = (self.pos[0] + self.dirnx, self.pos[1] + self.dirny)
+        if dirnx == -1 and self.pos[0] <= 0:
+            self.pos = (rows - 1, self.pos[1])  # if going off left -> wrap
+        elif dirnx == 1 and self.pos[0] >= rows - 1:
+            self.pos = (0, self.pos[1])
+        elif dirny == -1 and self.pos[1] <= 0:
+            self.pos = (self.pos[0], rows - 1)
+        elif dirny == 1 and self.pos[1] >= rows - 1:
+            self.pos = (self.pos[0], 0)
+        else:
+            self.pos = (self.pos[0] + dirnx, self.pos[1] + dirny)
+
 
     def draw(self, surface, eyes=False):
         dis = width // rows
@@ -32,17 +42,17 @@ class Cube(object):
             pygame.draw.circle(surface, (0, 0, 0), circle_middle2, radius)
 
 
-# TODO: Pass move logic to cubes. Modularize a little. The part after event check is messy
 class Snake(object):
     body = []
     turns = {}
 
     def __init__(self, color, pos):
         self.color = color
-        self.head = Cube(pos)
+        self.dirnx = 1
+        self.dirny = 0
+        self.head = Cube(pos, dirnx=self.dirnx, dirny=self.dirny)
         self.body.append(self.head)
-        self.dirnx = 0
-        self.dirny = 1
+
 
     def move(self):
         for event in pygame.event.get():
@@ -63,34 +73,16 @@ class Snake(object):
                 self.dirnx, self.dirny = 0, 1
                 self.turns[self.head.pos[:]] = [self.dirnx, self.dirny]
 
-        for i, c in enumerate(self.body):
-            p = c.pos[:]
-            if p in self.turns:
-                turn = self.turns[p]
-                # if turn[0] == -1 and c.pos[0] <= 0:
-                #     c.pos = (c.rows-1, c.pos[1])  # if going off left -> wrap
-                # elif turn[0] == 1 and c.pos[0] >= c.rows-1:
-                #     c.pos = (0, c.pos[1])
-                # elif turn[1] == -1 and c.pos[1] <= 0:
-                #     c.pos = (c.pos[0], c.rows-1)
-                # elif turn[1] == 1 and c.pos[1] >= c.rows-1:
-                #     c.pos = (c.pos[0], 0)
-                # else:
-                c.move(turn[0], turn[1])
+        turn_to_rem = None
+        for i, seg in enumerate(self.body):
+            if seg.pos in self.turns:
                 if i == len(self.body)-1:
-                    self.turns.pop(p)
+                    turn_to_rem = seg.pos
+                seg.move(*self.turns[seg.pos])
             else:
-                if c.dirnx == -1 and c.pos[0] <= 0:
-                    c.pos = (c.rows-1, c.pos[1])  # if going off left -> wrap
-                elif c.dirnx == 1 and c.pos[0] >= c.rows-1:
-                    c.pos = (0, c.pos[1])
-                elif c.dirny == -1 and c.pos[1] <= 0:
-                    c.pos = (c.pos[0], c.rows-1)
-                elif c.dirny == 1 and c.pos[1] >= c.rows-1:
-                    c.pos = (c.pos[0], 0)
-                else:
-                    c.move(c.dirnx, c.dirny)
-
+                seg.move(seg.dirnx, seg.dirny)
+        if turn_to_rem is not None:
+            self.turns.pop(turn_to_rem)
 
     def reset(self, pos):
         self.head = Cube(pos)
@@ -100,8 +92,7 @@ class Snake(object):
         self.dirnx = 1
         self.dirny = 0
 
-
-    def addCube(self):
+    def add_cube(self):
         tail = self.body[-1]
         dx, dy = tail.dirnx, tail.dirny
 
@@ -135,7 +126,6 @@ def draw_grid(w, rows, surface):
         pygame.draw.line(surface, (255, 255, 255), (0, y), (w, y))
 
 
-
 def redraw_window(surface):
     global width, rows, s, snack
     surface.fill((0, 0, 0))
@@ -159,15 +149,15 @@ def random_snack(item):
     return x, y
 
 
-def message_box(subject, content):
-    root = tk.Tk()
-    root.attributes("-topmost", True)
-    root.withdraw()
-    messagebox.showinfo(subject, content)
-    try:
-        root.destroy()
-    except:
-        pass
+# def message_box(subject, content):
+#     root = tk.Tk()
+#     root.attributes("-topmost", True)
+#     root.withdraw()
+#     messagebox.showinfo(subject, content)
+#     try:
+#         root.destroy()
+#     except:
+#         pass
 
 
 if __name__ == "__main__":
@@ -186,12 +176,12 @@ if __name__ == "__main__":
         clock.tick(15)  # lower -> slower snake
         s.move()
         if s.body[0].pos == snack.pos:
-            s.addCube()
+            s.add_cube()
             snack = Cube(random_snack(s), color=(0, 255, 0))
         for i, seg in enumerate(s.body):
             if seg.pos in [seg2.pos for seg2 in s.body[i+1:]]:
                 print(f"Score: {len(s.body)}")
-                message_box("You Lost!", "Play again...")
+                # message_box("You Lost!", "Play again...")
                 s.reset((10, 10))
                 break
 
